@@ -1,0 +1,3 @@
+namespace Http
+
+end Http
