@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
-lake update
-lake build
-lake exe rinha
+~/.elan/bin/lake update
+~/.elan/bin/lake build
+~/.elan/bin/lake exe rinha
