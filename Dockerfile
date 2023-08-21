@@ -30,5 +30,9 @@ COPY ./elan-init.sh /code/elan-init.sh
 
 RUN sh /code/elan-init.sh -y \
   && ~/.elan/bin/elan default leanprover/lean4:nightly
+  && ~/.elan/bin/lake update
+  && ~/.elan/bin/lake build
+
+COPY build/bin/rinha /code/rinha
 
 ENTRYPOINT ["/code/entrypoint.sh"]
