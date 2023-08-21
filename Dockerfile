@@ -25,11 +25,15 @@ RUN ln -sf /usr/bin/clang /usr/bin/cc \
 
 WORKDIR /code
 
+COPY . /code
+
 COPY ./entrypoint.sh /code/entrypoint.sh
 COPY ./elan-init.sh /code/elan-init.sh
 
 RUN sh /code/elan-init.sh -y \
-  && ~/.elan/bin/elan default leanprover/lean4:nightly \
+  && ~/.elan/bin/elan default leanprover/lean4:nightly
+
+RUN cd /code \
   && ~/.elan/bin/lake update \
   && ~/.elan/bin/lake build
 
