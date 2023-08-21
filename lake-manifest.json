@@ -1,0 +1,39 @@
+{"version": 4,
+ "packagesDir": "lake-packages",
+ "packages":
+ [{"git":
+   {"url": "git@github.com:aripiprazole/pgsql.git",
+    "subDir?": null,
+    "rev": "4e90ef6b658ebca2298460baccce47c79ff9a4c6",
+    "name": "pgsql",
+    "inputRev?": null}},
+  {"git":
+   {"url": "git@github.com:algebraic-sofia/soda.git",
+    "subDir?": null,
+    "rev": "32ce9234fadfec34f54eb33a2adc65f165397c67",
+    "name": "soda",
+    "inputRev?": null}},
+  {"git":
+   {"url": "https://github.com/xubaiw/lean4-socket.git",
+    "subDir?": null,
+    "rev": "e9190e622e4109196907ee03c33822d10d7d39b9",
+    "name": "socket",
+    "inputRev?": null}},
+  {"git":
+   {"url": "git@github.com:algebraic-sofia/lina.git",
+    "subDir?": null,
+    "rev": "0b435543d72c5152bb25fa9e171127827f496a8b",
+    "name": "lina",
+    "inputRev?": null}},
+  {"git":
+   {"url": "git@github.com:algebraic-sofia/melp.git",
+    "subDir?": null,
+    "rev": "2a84a574bf8911e569086df3fed0a33c1689d21a",
+    "name": "melp",
+    "inputRev?": null}},
+  {"git":
+   {"url": "git@github.com:algebraic-sofia/ash.git",
+    "subDir?": null,
+    "rev": "2ee79762e38adb8f7a29272816b943f5dfaab071",
+    "name": "ash",
+    "inputRev?": null}}]}
