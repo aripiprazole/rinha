@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build Docker image
-        run: docker build . -f dockerfile -t gabrielleeg1/rinha:latest
+        run: docker build . -f Dockerfile -t gabrielleeg1/rinha:latest
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
