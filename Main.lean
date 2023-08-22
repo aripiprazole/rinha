@@ -7,7 +7,7 @@ open Rinha
 
 open Rinha.Entities
 
-def app (_db: Pgsql.Connection) : Ash.App Unit := do
+def app (db: Pgsql.Connection) : Ash.App Unit := do
 
   post "/pessoas" $ λ conn => do
     let person : Option Person := conn.json
@@ -16,19 +16,19 @@ def app (_db: Pgsql.Connection) : Ash.App Unit := do
     | none        => conn.unprocessableEntity "Invalid JSON"
 
   get "/pessoas/:id" $ λ conn => do
-    let t := conn.bindings.find? "id"
-    match t with
+    match conn.bindings.find? "id" with
     | some query => conn.ok s!"hi {query}" 
     | none       => conn.badRequest "Bad Request"
 
   get "/pessoas" $ λ conn => do
-    let t := conn.query.find? "t"
-    match t with
+    match conn.query.find? "t" with
     | some query => conn.ok s!"ok bro {query}" 
     | none       => conn.badRequest "Bad Request"
   
   get "/contagem-pessoas" $ λ conn => do
-    conn.ok "Hello, world"
+    match (← Pgsql.exec db "SELECT * FROM h;" #[]) with
+    | Except.error _   => conn.badRequest "Oh no!"
+    | Except.ok    set => conn.ok s!"{set.size}"
 
 def main : IO Unit := do
   let conn ← Pgsql.connect "postgresql://postgres:1234@localhost:5432/teste"
