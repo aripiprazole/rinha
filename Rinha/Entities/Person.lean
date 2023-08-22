@@ -118,6 +118,13 @@ def findByUsername (username : Username) (conn : Connection) : IO (Option Person
   | Except.error _ => return none
   | Except.ok rs => return rs.get? 0 >>= FromResult.fromResult
 
+/-- Count all people -/
+def countPeople (conn : Connection) : IO Nat := do
+  let result ← exec conn "SELECT * FROM person;" #[]
+  match result with
+  | Except.error _ => return 0
+  | Except.ok rs => return rs.size
+
 /-- Inserts a person into the database. It returns the id of the person -/
 def create (person : Person) (conn : Connection) : IO (Option Person) := do
   let stack := person.stack.getD []
