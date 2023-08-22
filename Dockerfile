@@ -20,6 +20,6 @@ ENV LEAN_CC "clang++"
 RUN lake update
 RUN lake build rinha
 
-COPY build/bin/rinha /app/rinha
+RUN cp build/bin/rinha /app/rinha
 
 ENTRYPOINT ["/app/entrypoint.sh"]

@@ -87,7 +87,7 @@ instance : Ash.ToJSON Person where
 instance : FromJSON Person where
   fromJSON json := do
     let username  ← json.find? "apelido" >>= String.toUsername?
-    let name      ← json.find? "name"     >>= String.toName?
+    let name      ← json.find? "nome"    >>= String.toName?
     let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"
     return {id := "", username, name, birthdate, stack }
