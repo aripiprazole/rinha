@@ -129,7 +129,7 @@ def findById (id : String) (conn : Connection) : IO (Option Person) := do
 
 /-- Count all people -/
 def countPeople (conn : Connection) : IO Nat := do
-  let result ← exec conn "SELECT COUNT(column_name) FROM users;" #[]
+  let result ← exec conn "SELECT COUNT(id) FROM users;" #[]
   match result with
   | Except.error _ => return 0
   | Except.ok rs => 
