@@ -34,6 +34,6 @@
   {"git":
    {"url": "https://github.com/algebraic-sofia/ash.git",
     "subDir?": null,
-    "rev": "1270ce096d2bfe2d8c009d3f528cb6b8b5050b31",
+    "rev": "96f116c4bf09a2994d7f5efaa45acec7ab9b687b",
     "name": "ash",
     "inputRev?": null}}]}

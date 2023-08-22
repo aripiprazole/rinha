@@ -7,7 +7,7 @@ open Rinha
 
 open Rinha.Entities
 
-def app : Ash.App Unit := do
+def app (_db: Pgsql.Connection) : Ash.App Unit := do
 
   post "/pessoas" $ λ conn => do
     let person : Option Person := conn.json
@@ -30,7 +30,9 @@ def app : Ash.App Unit := do
   get "/contagem-pessoas" $ λ conn => do
     conn.ok "Hello, world"
 
-def main : IO Unit :=
-  let port := "8081"
-  app.run "0.0.0.0" port do
+def main : IO Unit := do
+  let conn ← Pgsql.connect "postgresql://postgres:1234@localhost:5432/teste"
+  IO.println s!"Conneted to database"
+  let port := "9999"
+  (app conn).run "0.0.0.0" port do
     IO.println s!"Server running on port {port}"
