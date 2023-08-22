@@ -1,7 +1,36 @@
 import Pgsql
 import Pgsql.Interface
+import Ash.JSON
 
 open Pgsql
+open Ash
+
+def getNat? (json : JSON) (key : String) : Option Nat := do
+  match json with
+  | Ash.JSON.obj s => 
+    let filter := s.filterMap $ λ x => match x with
+    | (k, Ash.JSON.num s) => if k = key then some s else none
+    | (_, _) => none
+    filter.head?
+  | _ => none
+
+def getArray? (json : JSON) (key : String) : Option (List JSON) := do
+  match json with
+  | Ash.JSON.obj s => 
+    let filter := s.filterMap $ λ x => match x with
+    | (k, Ash.JSON.arr s) => if k = key then some s else none
+    | (_, _) => none
+    filter.head?
+  | _ => none
+
+def getString? (json : JSON) (key : String) : Option String := do
+  match json with
+  | Ash.JSON.obj s => 
+    let filter := s.filterMap $ λ x => match x with
+    | (k, Ash.JSON.str s) => if k = key then some s else none
+    | (_, _) => none
+    filter.head?
+  | _ => none
 
 namespace Rinha
 
@@ -40,6 +69,9 @@ structure Stack where
   -- not_empty : (data.length > 0) = True
   -- less_than : (data.length <= 32) = True
 
+instance : Ash.ToJSON Stack where
+  toJSON stack :=  Ash.JSON.str stack.data
+
 /--
 The *basic* type of a person. It contains it's name and other info
 about the person.
@@ -50,6 +82,17 @@ structure Person where
   age : Nat
   birthdate : String
   stack : Option (List Stack)
+
+instance : Ash.ToJSON Person where
+  toJSON person := 
+    let stack := Ash.ToJSON.toJSON (person.stack.getD [])
+    Ash.ToJSON.toJSON
+      [ "username" +: person.username.data
+      , "name"     +: person.name.data
+      , "age"      +: person.age
+      , "birthday" +: person.birthdate
+      , "stack"    +: stack
+      ]
 
 instance : ToString Person where
   toString p :=
@@ -87,5 +130,35 @@ def ResultSet.toPerson? (rs : Pgsql.ResultSet) : Option Person := do
   let birthdate ← rs.getText "birthdate"
   let stack     ← Option.map String.parseStack $ rs.getText "stack"
   return {username := username, name := name, age := age, birthdate := birthdate, stack := stack}
+
+def personFromJson? (json : JSON) : Option Person := do
+  let username  ← getString? json "username" >>= String.toUsername?
+  let name      ← getString? json "name" >>= String.toName?
+  let age       ← getNat? json "age"
+  let birthdate ← getString? json "birthdate"
+  let stack     ← getArray? json "stack" >>= λ x => some $ x.filterMap $ λ x => match x with
+  | Ash.JSON.str s => String.toStack? s
+  | _ => none
+  return {username := username, name := name, age := age, birthdate := birthdate, stack := stack}
+
+/--
+Inserts a person into the database. It returns the id of the person
+-/
+def Person.create! (person : Person) (conn : Connection) : IO (Option Person) := do
+  let stack := person.stack.getD []
+  let stack := stack.foldl (λ acc x => acc ++ "," ++ x.data) ""
+
+  -- Make the query
+  let result ← exec conn "INSERT INTO person (username, name, age, birthdate, stack) VALUES ($1, $2, $3, $4, $5)" #[
+    person.username.data,
+    person.name.data,
+    toString person.age,
+    person.birthdate,
+    stack
+  ]
+
+  match result with
+  | Except.error _ => return none
+  | Except.ok _ => return some person
 
 end Rinha
