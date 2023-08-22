@@ -16,6 +16,8 @@ def PostgreSQLEnvironment.toConnectionString (self : PostgreSQLEnvironment) : St
 structure Environment where
   host : String
   port : String
+  gateway_host : String
+  gateway_port : String
   postgres : PostgreSQLEnvironment
 
 def readPostgreSQLEnvironment : IO PostgreSQLEnvironment := do
@@ -33,7 +35,9 @@ data type for easier access.
 def readEnvironment : IO Environment := do
   let port := Option.getD (← IO.getEnv "PORT") "8000"
   let host := Option.getD (← IO.getEnv "HOST") "0.0.0.0"
+  let gateway_port := Option.getD (← IO.getEnv "GATEWAY_PORT") "8000"
+  let gateway_host := Option.getD (← IO.getEnv "GATEWAY_HOST") "0.0.0.0"
   let postgres ← readPostgreSQLEnvironment
-  return {host, port, postgres}
+  return {host, port, postgres, gateway_host, gateway_port}
 
 end Rinha.Environment

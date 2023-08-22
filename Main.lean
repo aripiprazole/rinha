@@ -20,7 +20,7 @@ def app (env: Environment) (db: Pgsql.Connection) : Ash.App Unit := do
       let res ← person.create! db
       match res with
       | some person => do
-          let location := s!"http://{env.host}:{env.port}/pessoas/{person.id}"
+          let location := s!"/pessoas/{person.id}"
           conn.created person location
       | none        => conn.unprocessableEntity "Already exists."
 
