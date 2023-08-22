@@ -6,9 +6,12 @@ open Ash
 open Rinha
 
 open Rinha.Entities
+open Rinha.Environment
 
+/--
+Rinha de backend basic application monad
+-/
 def app (db: Pgsql.Connection) : Ash.App Unit := do
-
   post "/pessoas" $ λ conn => do
     let person : Option Person := conn.json
     match person with
@@ -30,9 +33,19 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
     | Except.error _   => conn.badRequest "Oh no!"
     | Except.ok    set => conn.ok s!"{set.size}"
 
+/--
+Rinha de backend entrypoint
+-/
 def main : IO Unit := do
-  let conn ← Pgsql.connect "postgresql://postgres:1234@localhost:5432/teste"
-  IO.println s!"Conneted to database"
-  let port := "9999"
-  (app conn).run "0.0.0.0" port do
-    IO.println s!"Server running on port {port}"
+  -- Read the environment from environment variables,
+  -- but if they are not set, use the default values.
+  let env <- readEnvironment
+
+  -- Connects to the database using the environment variables.
+  let conn ← Pgsql.connect $ env.postgres.toConnectionString
+  let app := app conn
+  IO.println s!"INFO: Database connection set up"
+
+  -- Run the application with the environment variables host and port.
+  app.run env.host env.port do
+    IO.println s!"INFO: Server running on {env.host}{env.port}"
