@@ -11,7 +11,7 @@ open Rinha.Environment
 /--
 Rinha de backend basic application monad
 -/
-def app (env: Environment) (db: Pgsql.Connection) : Ash.App Unit := do
+def app (db: Pgsql.Connection) : Ash.App Unit := do
   post "/pessoas" $ λ conn => do
     let person : Option Person := conn.json
     match person with
@@ -51,7 +51,7 @@ def main : IO Unit := do
 
   -- Connects to the database using the environment variables.
   let conn ← Pgsql.connect $ env.postgres.toConnectionString
-  let app := app env conn
+  let app := app conn
   IO.println s!"INFO: Database connection set up"
 
   -- Run the application with the environment variables host and port.

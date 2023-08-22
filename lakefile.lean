@@ -12,7 +12,7 @@ lean_lib Rinha {
 lean_exe rinha {
   root := `Main
   buildType := .release
-  moreLinkArgs := #["-lpq"]
+  moreLinkArgs := #["-lpq", "-O3"]
 }
 
 require lina from git "https://github.com/algebraic-sofia/lina.git"
