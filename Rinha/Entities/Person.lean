@@ -70,37 +70,33 @@ about the person.
 structure Person where
   username : Username
   name : Name
-  age : Nat
   birthdate : String
   stack : Option (List Stack)
   deriving Repr
 
 instance : Ash.ToJSON Person where
   toJSON person := 
-     `{ "username" +: person.username.data
-      , "name"     +: person.name.data
-      , "age"      +: person.age
-      , "birthday" +: person.birthdate
-      , "stack"    +: person.stack.getD []
+     `{ "apelido"    +: person.username.data
+      , "nome"       +: person.name.data
+      , "nascimento" +: person.birthdate
+      , "stack"      +: person.stack.getD []
       }
 
 instance : FromJSON Person where
   fromJSON json := do
-    let username  ← json.find? "username" >>= String.toUsername?
+    let username  ← json.find? "apelido" >>= String.toUsername?
     let name      ← json.find? "name"     >>= String.toName?
-    let age       ← json.find? "age"
     let birthdate ← json.find? "birthdate"
     let stack     ← json.find? "stack"
-    return {username, name, age, birthdate, stack }
+    return {username, name, birthdate, stack }
 
 instance : FromResult Person where
   fromResult rs := do
-    let username  ← rs.get "username" >>= String.toUsername?
-    let name      ← rs.get "name"     >>= String.toName?
-    let age       ← rs.get "age"
-    let birthdate ← rs.get "birthdate"
+    let username  ← rs.get "apelido"  >>= String.toUsername?
+    let name      ← rs.get "nome"     >>= String.toName?
+    let birthdate ← rs.get "nasciomento"
     let stack     ← Option.map String.parseStack $ rs.get "stack"
-    return {username, name, age, birthdate, stack}
+    return {username, name, birthdate, stack}
 
 /--
 Inserts a person into the database. It returns the id of the person
@@ -110,12 +106,11 @@ def create (person : Person) (conn : Connection) : IO (Option Person) := do
   let stack := stack.foldl (λ acc x => acc ++ "," ++ x.data) ""
 
   -- Make the query
-  let query := "INSERT INTO person (username, name, age, birthdate, stack) VALUES ($1, $2, $3, $4, $5);" 
+  let query := "INSERT INTO person (username, name, birthdate, stack) VALUES ($1, $2, $3, $4);" 
 
   let result ← exec conn query
     #[ person.username.data
     ,  person.name.data
-    ,  toString person.age
     ,  person.birthdate
     ,  stack
     ]
