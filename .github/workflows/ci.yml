@@ -19,11 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         
-      - name: test workflow
-        run: echo $DOCKER_USER
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
