@@ -20,7 +20,7 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
       let res ← person.create! db
       match res with
       | some person => conn.ok person
-      | none        => conn.ok "{}"
+      | none        => conn.ok "Already exists."
 
   get "/pessoas/:id" $ λ conn => do
     match conn.bindings.find? "id" with

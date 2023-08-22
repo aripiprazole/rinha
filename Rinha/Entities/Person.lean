@@ -45,23 +45,29 @@ structure Stack where
   -- less_than : (data.length <= 32) = True
   deriving Repr
 
-def String.toStack? (s : String) : Option Stack :=
-  if s.length > 32 then none else some {data := s}
+instance : FromJSON Stack where
+  fromJSON
+    | JSON.str s => some (Stack.mk s)
+    | _          => none
+
+def String.toStack? (s : String) : Option (List Stack) :=
+   JSON.parse s >>= FromJSON.fromJSON
+  
+def String.parseStack (s: JSON) : Option (List Stack) := 
+  FromJSON.fromJSON s
 
 /--
 Parses a list of stacks from a string. The string must be in the format
 `stack1,stack2,stack3,...,stackN`.
 -/
 
-def String.parseStack (stack : String) : List Stack :=
-  List.filterMap String.toStack? (stack.splitOn ",") 
-
-instance : Ash.FromJSON Stack where
-  fromJSON stack := Stack.mk <$> (FromJSON.fromJSON stack)
-
 instance : Ash.ToJSON Stack where
   toJSON stack := Ash.JSON.str stack.data
 
+instance [Ash.ToJSON t]: Ash.ToJSON (Option t) where
+  toJSON 
+    | none   => JSON.null
+    | some x => ToJSON.toJSON x 
 
 /--
 The *basic* type of a person. It contains it's name and other info
@@ -89,7 +95,7 @@ instance : FromJSON Person where
     let username  ← json.find? "apelido" >>= String.toUsername?
     let name      ← json.find? "nome"    >>= String.toName?
     let birthdate ← json.find? "nascimento"
-    let stack     ← json.find? "stack"
+    let stack     ← json.find? "stack"   <&> String.parseStack
     return {id := "", username, name, birthdate, stack }
 
 --//////////////////////////////////////////////////////////////////////////////
@@ -102,7 +108,7 @@ instance : FromResult Person where
     let username  ← rs.get "username"  >>= String.toUsername?
     let name      ← rs.get "name"      >>= String.toName?
     let birthdate ← rs.get "birth_date"
-    let stack     ← Option.map String.parseStack $ rs.get "stack"
+    let stack     ← Option.map String.toStack? $ rs.get "stack"
     return {id, username, name, birthdate, stack}
 
 /-- Finds a list person by it's stack -/
@@ -133,8 +139,7 @@ def countPeople (conn : Connection) : IO Nat := do
 
 /-- Inserts a person into the database. It returns the id of the person -/
 def Person.create! (person : Person) (conn : Connection) : IO (Option Person) := do
-  let stack := person.stack.getD []
-  let stack := String.intercalate "," (Stack.data <$> stack) 
+  let stack := ToJSON.toJSON person.stack
 
   -- Make the query
   let query := "INSERT INTO users (username, name, birth_date, stack) VALUES ($1, $2, $3, $4) RETURNING id, username, name, birth_date, stack;" 
@@ -143,7 +148,7 @@ def Person.create! (person : Person) (conn : Connection) : IO (Option Person) :=
     #[ person.username.data
     ,  person.name.data
     ,  person.birthdate
-    ,  stack
+    ,  stack.toString
     ]
 
   match result with
