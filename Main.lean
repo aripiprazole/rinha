@@ -15,23 +15,29 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
   post "/pessoas" $ λ conn => do
     let person : Option Person := conn.json
     match person with
-    | some person => conn.created person
     | none        => conn.unprocessableEntity "Invalid JSON"
+    | some person =>
+      let res ← person.create! db
+      match res with
+      | some person => conn.ok person
+      | none        => conn.ok "{}"
 
   get "/pessoas/:id" $ λ conn => do
     match conn.bindings.find? "id" with
-    | some query => conn.ok s!"hi {query}" 
     | none       => conn.badRequest "Bad Request"
+    | some query => 
+      match (← findById query db) with
+      | some person => conn.ok person
+      | none        => conn.notFound "" 
 
   get "/pessoas" $ λ conn => do
     match conn.query.find? "t" with
-    | some query => conn.ok s!"ok bro {query}" 
     | none       => conn.badRequest "Bad Request"
+    | some query => conn.ok (← findLike query db)
   
   get "/contagem-pessoas" $ λ conn => do
-    match (← Pgsql.exec db "SELECT * FROM h;" #[]) with
-    | Except.error _   => conn.badRequest "Oh no!"
-    | Except.ok    set => conn.ok s!"{set.size}"
+    let count ← countPeople db
+    conn.ok s!"{count}"
 
 /--
 Rinha de backend entrypoint
@@ -48,4 +54,4 @@ def main : IO Unit := do
 
   -- Run the application with the environment variables host and port.
   app.run env.host env.port do
-    IO.println s!"INFO: Server running on {env.host}{env.port}"
+    IO.println s!"INFO: Server running on {env.host}:{env.port}"

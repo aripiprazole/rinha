@@ -68,6 +68,7 @@ The *basic* type of a person. It contains it's name and other info
 about the person.
 -/
 structure Person where
+  id: String
   username : Username
   name : Name
   birthdate : String
@@ -76,7 +77,8 @@ structure Person where
 
 instance : Ash.ToJSON Person where
   toJSON person := 
-     `{ "apelido"    +: person.username.data
+     `{ "id"         +: person.id
+      , "apelido"    +: person.username.data
       , "nome"       +: person.name.data
       , "nascimento" +: person.birthdate
       , "stack"      +: person.stack.getD []
@@ -88,7 +90,7 @@ instance : FromJSON Person where
     let name      ← json.find? "name"     >>= String.toName?
     let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"
-    return {username, name, birthdate, stack }
+    return {id := "", username, name, birthdate, stack }
 
 --//////////////////////////////////////////////////////////////////////////////
 --//// SECTION: Queries Repository /////////////////////////////////////////////
@@ -96,42 +98,46 @@ instance : FromJSON Person where
 
 instance : FromResult Person where
   fromResult rs := do
+    let id        ← rs.get "id"
     let username  ← rs.get "username"  >>= String.toUsername?
-    let name      ← rs.get "name"     >>= String.toName?
-    let birthdate ← rs.get "birthdate"
+    let name      ← rs.get "name"      >>= String.toName?
+    let birthdate ← rs.get "birth_date"
     let stack     ← Option.map String.parseStack $ rs.get "stack"
-    return {username, name, birthdate, stack}
+    return {id, username, name, birthdate, stack}
 
 /-- Finds a list person by it's stack -/
-def findStackLike (stack : String) (conn : Connection) : IO (List Person) := do
-  let query := "SELECT * FROM person WHERE stack LIKE $1;"
-  let result ← exec conn query #[stack]
+def findLike (queryStr : String) (conn : Connection) : IO (List Person) := do
+  let query := "SELECT * FROM users WHERE stack LIKE $1 OR username LIKE $1 OR name LIKE $1 LIMIT 50;"
+  let result ← exec conn query #[s!"%{queryStr}%"]
   match result with
   | Except.error _ => return []
   | Except.ok rs => return rs.toList.filterMap FromResult.fromResult
 
-/-- Finds a person by it's username -/
-def findByUsername (username : Username) (conn : Connection) : IO (Option Person) := do
-  let query := "SELECT * FROM person WHERE username = $1;"
-  let result ← exec conn query #[username.data]
+/-- Finds a person by it's id -/
+def findById (id : String) (conn : Connection) : IO (Option Person) := do
+  let query := "SELECT * FROM users WHERE id = $1;"
+  let result ← exec conn query #[id]
   match result with
   | Except.error _ => return none
   | Except.ok rs => return rs.get? 0 >>= FromResult.fromResult
 
 /-- Count all people -/
 def countPeople (conn : Connection) : IO Nat := do
-  let result ← exec conn "SELECT * FROM person;" #[]
+  let result ← exec conn "SELECT COUNT(column_name) FROM users;" #[]
   match result with
   | Except.error _ => return 0
-  | Except.ok rs => return rs.size
+  | Except.ok rs => 
+    match rs.get? 0 with
+    | some res => return (res.get "count").get!
+    | none     => return 0
 
 /-- Inserts a person into the database. It returns the id of the person -/
-def create (person : Person) (conn : Connection) : IO (Option Person) := do
+def Person.create! (person : Person) (conn : Connection) : IO (Option Person) := do
   let stack := person.stack.getD []
-  let stack := stack.foldl (λ acc x => acc ++ "," ++ x.data) ""
+  let stack := String.intercalate "," (Stack.data <$> stack) 
 
   -- Make the query
-  let query := "INSERT INTO person (username, name, birthdate, stack) VALUES ($1, $2, $3, $4);" 
+  let query := "INSERT INTO users (username, name, birth_date, stack) VALUES ($1, $2, $3, $4) RETURNING id, username, name, birth_date, stack;" 
 
   let result ← exec conn query
     #[ person.username.data
@@ -142,6 +148,6 @@ def create (person : Person) (conn : Connection) : IO (Option Person) := do
 
   match result with
   | Except.error _ => return none
-  | Except.ok _ => return some person
+  | Except.ok rs   => return rs.get? 0 >>= FromResult.fromResult
 
 end Rinha.Entities
