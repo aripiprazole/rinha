@@ -5,20 +5,32 @@ open Ash.App
 open Ash
 open Rinha
 
-def app : Ash.App Unit := do
-  get "/" $ λ conn => do
-    conn.ok "Hello, world"
-  
-  post "/pessoas" $ λ conn => do
-    let str := conn.melp.data.body
-    let person := Ash.JSON.parse str >>= personFromJson?
-    match person with
-    | some person => do
-      conn.created $ ToJSON.toJSON person
-    | none => do
-      conn.unprocessableEntity "Invalid JSON"
+open Rinha.Entities
 
+def app : Ash.App Unit := do
+
+  post "/pessoas" $ λ conn => do
+    let person : Option Person := conn.json
+    match person with
+    | some person => conn.created person
+    | none        => conn.unprocessableEntity "Invalid JSON"
+
+  get "/pessoas/:id" $ λ conn => do
+    let t := conn.bindings.find? "id"
+    match t with
+    | some query => conn.ok s!"hi {query}" 
+    | none       => conn.badRequest "Bad Request"
+
+  get "/pessoas" $ λ conn => do
+    let t := conn.query.find? "t"
+    match t with
+    | some query => conn.ok s!"ok bro {query}" 
+    | none       => conn.badRequest "Bad Request"
+  
+  get "/contagem-pessoas" $ λ conn => do
+    conn.ok "Hello, world"
 
 def main : IO Unit :=
-  app.run "0.0.0.0" "8000" do
-    IO.println "Server running on port 8000"
+  let port := "8081"
+  app.run "0.0.0.0" port do
+    IO.println s!"Server running on port {port}"

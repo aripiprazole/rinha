@@ -4,7 +4,7 @@
  [{"git":
    {"url": "https://github.com/aripiprazole/pgsql.git",
     "subDir?": null,
-    "rev": "51314a315abaca25e2f46ff48d9a957ce2bd1fd9",
+    "rev": "c41f494eb99f3e93017a7e2e590436b57938c638",
     "name": "pgsql",
     "inputRev?": null}},
   {"git":
@@ -34,6 +34,6 @@
   {"git":
    {"url": "https://github.com/algebraic-sofia/ash.git",
     "subDir?": null,
-    "rev": "294400f09ce6cfade76132177772d52ba2bd089e",
+    "rev": "1270ce096d2bfe2d8c009d3f528cb6b8b5050b31",
     "name": "ash",
     "inputRev?": null}}]}
