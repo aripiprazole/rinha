@@ -8,5 +8,5 @@ def app : Ash.App Unit := do
     conn.ok "Hello, world"
 
 def main : IO Unit :=
-  app.run "localhost" "8000" do
+  app.run "0.0.0.0" "8000" do
     IO.println "Server running on port 8000"
