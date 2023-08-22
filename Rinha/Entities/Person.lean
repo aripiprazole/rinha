@@ -86,21 +86,39 @@ instance : FromJSON Person where
   fromJSON json := do
     let username  ← json.find? "apelido" >>= String.toUsername?
     let name      ← json.find? "name"     >>= String.toName?
-    let birthdate ← json.find? "birthdate"
+    let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"
     return {username, name, birthdate, stack }
 
+--//////////////////////////////////////////////////////////////////////////////
+--//// SECTION: Queries Repository /////////////////////////////////////////////
+--//////////////////////////////////////////////////////////////////////////////
+
 instance : FromResult Person where
   fromResult rs := do
-    let username  ← rs.get "apelido"  >>= String.toUsername?
-    let name      ← rs.get "nome"     >>= String.toName?
-    let birthdate ← rs.get "nasciomento"
+    let username  ← rs.get "username"  >>= String.toUsername?
+    let name      ← rs.get "name"     >>= String.toName?
+    let birthdate ← rs.get "birthdate"
     let stack     ← Option.map String.parseStack $ rs.get "stack"
     return {username, name, birthdate, stack}
 
-/--
-Inserts a person into the database. It returns the id of the person
--/
+/-- Finds a list person by it's stack -/
+def findStackLike (stack : String) (conn : Connection) : IO (List Person) := do
+  let query := "SELECT * FROM person WHERE stack LIKE $1;"
+  let result ← exec conn query #[stack]
+  match result with
+  | Except.error _ => return []
+  | Except.ok rs => return rs.toList.filterMap FromResult.fromResult
+
+/-- Finds a person by it's username -/
+def findByUsername (username : Username) (conn : Connection) : IO (Option Person) := do
+  let query := "SELECT * FROM person WHERE username = $1;"
+  let result ← exec conn query #[username.data]
+  match result with
+  | Except.error _ => return none
+  | Except.ok rs => return rs.get? 0 >>= FromResult.fromResult
+
+/-- Inserts a person into the database. It returns the id of the person -/
 def create (person : Person) (conn : Connection) : IO (Option Person) := do
   let stack := person.stack.getD []
   let stack := stack.foldl (λ acc x => acc ++ "," ++ x.data) ""
