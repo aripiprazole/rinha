@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
-chmod +x /code/rinha
+chmod +x /app/rinha
 
-/code/rinha
+/app/rinha

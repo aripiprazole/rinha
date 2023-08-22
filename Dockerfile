@@ -1,42 +1,24 @@
-FROM alpine:latest
+FROM ubuntu:22.04
 
-RUN apk update \
-  && apk upgrade \
-  && apk add --no-cache \
-    clang \
-    clang-dev \
-    alpine-sdk \
-    dpkg \
-    cmake \
-    ccache \
-    python3
+RUN apt-get update && apt-get install -y git curl libcurl4-openssl-dev build-essential pkg-config python3 python3-pip python3-venv libpq-dev clang
 
-RUN ln -sf /usr/bin/clang /usr/bin/cc \
-  && ln -sf /usr/bin/clang++ /usr/bin/c++ \
-  && update-alternatives --install /usr/bin/cc cc /usr/bin/clang 10\
-  && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 10\
-  && update-alternatives --auto cc \
-  && update-alternatives --auto c++ \
-  && update-alternatives --display cc \
-  && update-alternatives --display c++ \
-  && ls -l /usr/bin/cc /usr/bin/c++ \
-  && cc --version \
-  && c++ --version
+ENV APP_HOME /app
+ENV HOME /app
 
-WORKDIR /code
+WORKDIR $APP_HOME
 
-COPY . /code
+RUN curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s --  -y 
+ENV PATH="${APP_HOME}/.elan/bin:${PATH}"
 
-COPY ./entrypoint.sh /code/entrypoint.sh
-COPY ./elan-init.sh /code/elan-init.sh
+RUN apt-get -y install libpq5 libssl-dev libpq-dev  postgresql-client-common
 
-RUN sh /code/elan-init.sh -y \
-  && ~/.elan/bin/elan default leanprover/lean4:nightly
+COPY ./entrypoint.sh /app/entrypoint.sh
+COPY . /app
 
-RUN cd /code \
-  && ~/.elan/bin/lake update \
-  && ~/.elan/bin/lake build
+RUN cd /app 
+RUN lake update
+RUN lake build rinha
 
-COPY build/bin/rinha /code/rinha
+COPY build/bin/rinha /app/rinha
 
-ENTRYPOINT ["/code/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
