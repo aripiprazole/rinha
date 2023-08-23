@@ -79,6 +79,7 @@ structure Person where
   name : Name
   birthdate : String
   stack : Option (List Stack)
+  search : String -- All things concatenated
   deriving Repr
 
 instance : Ash.ToJSON Person where
@@ -96,7 +97,8 @@ instance : FromJSON Person where
     let name      ← json.find? "nome"    >>= String.toName?
     let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"   <&> String.parseStack
-    return {id := "", username, name, birthdate, stack }
+    let search    := s!"{username.data}{name.data}{String.intercalate "," $ (stack.getD []).map Stack.data}"
+    return {id := "", username, name, birthdate, stack, search}
 
 --//////////////////////////////////////////////////////////////////////////////
 --//// SECTION: Queries Repository /////////////////////////////////////////////
@@ -109,11 +111,12 @@ instance : FromResult Person where
     let name      ← rs.get "name"      >>= String.toName?
     let birthdate ← rs.get "birth_date"
     let stack     ← Option.map String.toStack? $ rs.get "stack"
-    return {id, username, name, birthdate, stack}
+    let search    ← rs.get "search"
+    return {id, username, name, birthdate, stack, search}
 
 /-- Finds a list person by it's stack -/
 def findLike (queryStr : String) (conn : Connection) : IO (List Person) := do
-  let query := "SELECT * FROM users WHERE stack LIKE $1 OR username LIKE $1 OR name LIKE $1 LIMIT 50;"
+  let query := "SELECT * FROM users WHERE search LIKE $1 LIMIT 50;"
   let result ← exec conn query #[s!"%{queryStr}%"]
   match result with
   | Except.error _ => return []
