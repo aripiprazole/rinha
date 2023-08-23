@@ -13,7 +13,6 @@ Rinha de backend basic application monad
 -/
 def app (db: Pgsql.Connection) : Ash.App Unit := do
   post "/pessoas" $ λ conn => do
-    IO.println "POST /pessoas"
     let person : Option Person := conn.json
     match person with
     | none        => conn.unprocessableEntity "Invalid JSON"
@@ -26,7 +25,6 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
       | none        => conn.unprocessableEntity "Already exists."
 
   get "/pessoas/:id" $ λ conn => do
-    IO.println "GET /pessoas/id"
     match conn.bindings.find? "id" with
     | none       => conn.badRequest "Bad Request"
     | some query => 
@@ -35,13 +33,11 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
       | none        => conn.notFound "" 
 
   get "/pessoas" $ λ conn => do
-    IO.println "GET /pessoas"
     match conn.query.find? "t" with
     | none       => conn.badRequest "Bad Request"
     | some query => conn.ok (← findLike query db)
   
   get "/contagem-pessoas" $ λ conn => do
-    IO.println "GET /contagem-pessoas"
     let count ← countPeople db
     conn.ok s!"{count}"
 
@@ -52,7 +48,6 @@ def main : IO Unit := do
   -- Read the environment from environment variables,
   -- but if they are not set, use the default values.
   let env <- readEnvironment
-  IO.println env.postgres.toConnectionString
 
   -- Connects to the database using the environment variables.
   let conn ← Pgsql.connect $ env.postgres.toConnectionString
