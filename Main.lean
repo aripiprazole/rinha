@@ -21,7 +21,7 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
       match res with
       | some person => do
           let location := s!"/pessoas/{person.id}"
-          conn.created person location
+          conn.created "" location
       | none        => conn.unprocessableEntity "Already exists."
 
   get "/pessoas/:id" $ λ conn => do

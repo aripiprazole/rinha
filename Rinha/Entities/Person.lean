@@ -79,7 +79,6 @@ structure Person where
   name : Name
   birthdate : String
   stack : Option (List Stack)
-  search : String -- All things concatenated
   deriving Repr
 
 instance : Ash.ToJSON Person where
@@ -97,8 +96,7 @@ instance : FromJSON Person where
     let name      ← json.find? "nome"    >>= String.toName?
     let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"   <&> String.parseStack
-    let search    := s!"{username.data}{name.data}{String.intercalate "," $ (stack.getD []).map Stack.data}"
-    return {id := "", username, name, birthdate, stack, search}
+    return {id := "", username, name, birthdate, stack}
 
 --//////////////////////////////////////////////////////////////////////////////
 --//// SECTION: Queries Repository /////////////////////////////////////////////
@@ -111,8 +109,7 @@ instance : FromResult Person where
     let name      ← rs.get "name"      >>= String.toName?
     let birthdate ← rs.get "birth_date"
     let stack     ← Option.map String.toStack? $ rs.get "stack"
-    let search    ← rs.get "search"
-    return {id, username, name, birthdate, stack, search}
+    return {id, username, name, birthdate, stack }
 
 /-- Finds a list person by it's stack -/
 def findLike (queryStr : String) (conn : Connection) : IO (List Person) := do
@@ -145,13 +142,14 @@ def Person.create! (person : Person) (conn : Connection) : IO (Option Person) :=
   let stack := ToJSON.toJSON person.stack
 
   -- Make the query
-  let query := "INSERT INTO users (username, name, birth_date, stack) VALUES ($1, $2, $3, $4) RETURNING id, username, name, birth_date, stack;" 
+  let query := "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;" 
 
   let result ← exec conn query
     #[ person.username.data
     ,  person.name.data
     ,  person.birthdate
     ,  stack.toString
+    ,  s!"{person.username.data} {person.name.data} {String.intercalate "," $ (person.stack.getD []).map Stack.data}"
     ]
 
   match result with
