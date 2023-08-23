@@ -15,12 +15,14 @@ It have to be unique.
 -/
 structure Username where
   data : String
-  -- not_empty : (data.length > 0) = True
-  -- less_than : (data.length <= 32) = True
+  -- Formal proofs
+  prop_in_bounds : data.length <= 32
   deriving Repr
-  
-def String.toUsername? (s : String) : Option Username :=
-  if s.length > 32 then none else some {data := s}
+
+def String.toUsername? (data : String) : Option Username :=
+  match data.length.decLe 32 with
+  | Decidable.isTrue p  => some {data, prop_in_bounds := p}
+  | Decidable.isFalse _ => none
 
 /--
 The name of a person. It contains the name of the person and it can
@@ -28,12 +30,14 @@ be only 100 characters long.
 -/
 structure Name where
   data : String
-  -- not_empty : (data.length > 0) = True
-  -- less_than : (data.length <= 100) = True
+  -- Formal proofs
+  prop_in_bounds : data.length <= 100
   deriving Repr
 
-def String.toName? (s : String) : Option Name :=
-  if s.length > 100 then none else some {data := s}
+def String.toName? (data : String) : Option Name :=
+  match data.length.decLe 100 with
+  | Decidable.isTrue p  => some {data, prop_in_bounds := p}
+  | Decidable.isFalse _ => none
 
 /--
 The stack of a person. It contains the name of the stack and it can
@@ -41,8 +45,6 @@ be only 32 characters long.
 -/
 structure Stack where
   data : String
-  -- not_empty : (data.length > 0) = True
-  -- less_than : (data.length <= 32) = True
   deriving Repr
 
 instance : FromJSON Stack where
@@ -74,11 +76,11 @@ The *basic* type of a person. It contains it's name and other info
 about the person.
 -/
 structure Person where
-  id: String
+  id: Option String := none
   username : Username
   name : Name
   birthdate : String
-  stack : Option (List Stack)
+  stack : Option (List Stack) := none
   deriving Repr
 
 instance : Ash.ToJSON Person where
@@ -96,7 +98,7 @@ instance : FromJSON Person where
     let name      ← json.find? "nome"    >>= String.toName?
     let birthdate ← json.find? "nascimento"
     let stack     ← json.find? "stack"   <&> String.parseStack
-    return {id := "", username, name, birthdate, stack}
+    return {username, name, birthdate, stack}
 
 --//////////////////////////////////////////////////////////////////////////////
 --//// SECTION: Queries Repository /////////////////////////////////////////////
@@ -109,7 +111,7 @@ instance : FromResult Person where
     let name      ← rs.get "name"      >>= String.toName?
     let birthdate ← rs.get "birth_date"
     let stack     ← Option.map String.toStack? $ rs.get "stack"
-    return {id, username, name, birthdate, stack }
+    return {id := some id, username, name, birthdate, stack }
 
 /-- Finds a list person by it's stack -/
 def findLike (queryStr : String) (conn : Connection) : IO (List Person) := do
@@ -142,9 +144,7 @@ def Person.create! (person : Person) (conn : Connection) : IO (Option Person) :=
   let stack := ToJSON.toJSON person.stack
 
   -- Make the query
-  let query := "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;" 
-
-  let result ← exec conn query
+  let result ← exec conn "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;" 
     #[ person.username.data
     ,  person.name.data
     ,  person.birthdate
