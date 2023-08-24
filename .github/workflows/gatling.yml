@@ -44,4 +44,7 @@ jobs:
           destination_dir: ${{ env.GATLING_OUTPUT_FOLDER }}
 
       - name: Print deployed
-        run: echo "Deployed at [https://aripiprazole.github.io/rinha/${{ env.GATLING_OUTPUT_FOLDER }}](aripiprazole.github.io/rinha/${{ env.GATLING_OUTPUT_FOLDER }})" >> "${GITHUB_STEP_SUMMARY}"
+        run: |
+          echo "Deployed at https://aripiprazole.github.io/rinha/${{ env.GATLING_OUTPUT_FOLDER }}"
+          echo "and printing to summary:"
+          echo "Deployed at [https://aripiprazole.github.io/rinha/${{ env.GATLING_OUTPUT_FOLDER }}](https://aripiprazole.github.io/rinha/${{ env.GATLING_OUTPUT_FOLDER }})" >> "${GITHUB_STEP_SUMMARY}"
