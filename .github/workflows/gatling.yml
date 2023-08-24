@@ -12,9 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Docker build
-        run: docker build --tag 'gabrielleeg1/rinha:latest' .
-
       - name: Docker compose
         run: docker-compose up -d
 
