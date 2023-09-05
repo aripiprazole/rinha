@@ -1,6 +1,7 @@
 import Pgsql
 import Pgsql.Interface
 import Ash.JSON
+import Soda.Data.ByteSlice
 
 open Pgsql
 open Ash
@@ -38,6 +39,22 @@ def String.toName? (data : String) : Option Name :=
   match data.length.decLe 100 with
   | Decidable.isTrue p  => some {data, prop_in_bounds := p}
   | Decidable.isFalse _ => none
+
+/--
+The birthdate of a person. It must split into valid year, month, day
+be only 10 characters long.
+-/
+structure Birthdate where
+  data : String
+  deriving Repr
+
+def Birthdate.validDate? (data : String) : Option Birthdate :=
+  match String.toNat? <$> data.split (fun x => x == '-') with
+  | [some a, some m, some d] =>
+      if d > 31 || m > 12 || a > 2021
+        then none
+        else some { data }
+  | _ => none
 
 /--
 The stack of a person. It contains the name of the stack and it can
@@ -79,7 +96,7 @@ structure Person where
   id: Option String := none
   username : Username
   name : Name
-  birthdate : String
+  birthdate : Birthdate
   stack : Option (List Stack) := none
   deriving Repr
 
@@ -88,7 +105,7 @@ instance : Ash.ToJSON Person where
      `{ "id"         +: person.id
       , "apelido"    +: person.username.data
       , "nome"       +: person.name.data
-      , "nascimento" +: person.birthdate
+      , "nascimento" +: person.birthdate.data
       , "stack"      +: person.stack.getD []
       }
 
@@ -96,7 +113,7 @@ instance : FromJSON Person where
   fromJSON json := do
     let username  ← json.find? "apelido" >>= String.toUsername?
     let name      ← json.find? "nome"    >>= String.toName?
-    let birthdate ← json.find? "nascimento"
+    let birthdate ← json.find? "nascimento" >>= Birthdate.validDate?
     let stack     ← json.find? "stack"   <&> String.parseStack
     return {username, name, birthdate, stack}
 
@@ -109,7 +126,7 @@ instance : FromResult Person where
     let id        ← rs.get "id"
     let username  ← rs.get "username"  >>= String.toUsername?
     let name      ← rs.get "name"      >>= String.toName?
-    let birthdate ← rs.get "birth_date"
+    let birthdate ← rs.get "birth_date" >>= Birthdate.validDate?
     let stack     ← Option.map String.toStack? $ rs.get "stack"
     return {id := some id, username, name, birthdate, stack }
 
@@ -147,9 +164,9 @@ def Person.create! (person : Person) (conn : Connection) : IO (Option Person) :=
   let result ← exec conn "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;"
     #[ person.username.data
     ,  person.name.data
-    ,  person.birthdate
+    ,  person.birthdate.data
     ,  stack.toString
-    ,  s!"{person.username.data} {person.name.data} {String.intercalate "," $ (person.stack.getD []).map Stack.data}"
+    ,  s!"{person.username.data} {person.name.data} {person.birthdate.data} {String.intercalate "," $ (person.stack.getD []).map Stack.data}"
     ]
 
   match result with
