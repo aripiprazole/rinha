@@ -19,24 +19,27 @@ def app (db: Pgsql.Connection) : Ash.App Unit := do
     | some person =>
       let res ← person.create! db
       match res with
-      | some person => do
-          let location := s!"/pessoas/{person.id}"
-          conn.created "" location
       | none        => conn.unprocessableEntity "Already exists."
+      | some person => do
+          match person.id with
+          | none    => conn.unprocessableEntity "Invalid id (?)."
+          | some id => do
+            let location := s!"/pessoas/{id}"
+            conn.created "" location
 
   get "/pessoas/:id" $ λ conn => do
     match conn.bindings.find? "id" with
     | none       => conn.badRequest "Bad Request"
-    | some query => 
+    | some query =>
       match (← findById query db) with
       | some person => conn.ok person
-      | none        => conn.notFound "" 
+      | none        => conn.notFound ""
 
   get "/pessoas" $ λ conn => do
     match conn.query.find? "t" with
     | none       => conn.badRequest "Bad Request"
     | some query => conn.ok (← findLike query db)
-  
+
   get "/contagem-pessoas" $ λ conn => do
     let count ← countPeople db
     conn.ok s!"{count}"
