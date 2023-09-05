@@ -7,19 +7,23 @@ ENV HOME /app
 
 WORKDIR $APP_HOME
 
-RUN curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s --  -y 
+RUN curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s --  -y
 ENV PATH="${APP_HOME}/.elan/bin:${PATH}"
 
 COPY ./entrypoint.sh /app/entrypoint.sh
-COPY . /app
+COPY lakefile.lean /app/lakefile.lean
+COPY lean-toolchain /app/lean-toolchain
+COPY lake-manifest.json /app/lake-manifest.json
 
-RUN cd /app 
+WORKDIR /app
 
 ENV LEAN_CC "clang++"
-
 RUN lake update
-RUN lake build rinha
 
+COPY Rinha /app/Rinha
+COPY *.lean /app/
+
+RUN lake build rinha
 RUN cp build/bin/rinha /app/rinha
 
 ENTRYPOINT ["/app/entrypoint.sh"]

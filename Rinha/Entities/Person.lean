@@ -54,8 +54,8 @@ instance : FromJSON Stack where
 
 def String.toStack? (s : String) : Option (List Stack) :=
    JSON.parse s >>= FromJSON.fromJSON
-  
-def String.parseStack (s: JSON) : Option (List Stack) := 
+
+def String.parseStack (s: JSON) : Option (List Stack) :=
   FromJSON.fromJSON s
 
 /--
@@ -67,9 +67,9 @@ instance : Ash.ToJSON Stack where
   toJSON stack := Ash.JSON.str stack.data
 
 instance [Ash.ToJSON t]: Ash.ToJSON (Option t) where
-  toJSON 
+  toJSON
     | none   => JSON.null
-    | some x => ToJSON.toJSON x 
+    | some x => ToJSON.toJSON x
 
 /--
 The *basic* type of a person. It contains it's name and other info
@@ -84,7 +84,7 @@ structure Person where
   deriving Repr
 
 instance : Ash.ToJSON Person where
-  toJSON person := 
+  toJSON person :=
      `{ "id"         +: person.id
       , "apelido"    +: person.username.data
       , "nome"       +: person.name.data
@@ -134,7 +134,7 @@ def countPeople (conn : Connection) : IO Nat := do
   let result ← exec conn "SELECT COUNT(id) FROM users;" #[]
   match result with
   | Except.error _ => return 0
-  | Except.ok rs => 
+  | Except.ok rs =>
     match rs.get? 0 with
     | some res => return (res.get "count").get!
     | none     => return 0
@@ -144,7 +144,7 @@ def Person.create! (person : Person) (conn : Connection) : IO (Option Person) :=
   let stack := ToJSON.toJSON person.stack
 
   -- Make the query
-  let result ← exec conn "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;" 
+  let result ← exec conn "INSERT INTO users (username, name, birth_date, stack, search) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, name, birth_date, stack;"
     #[ person.username.data
     ,  person.name.data
     ,  person.birthdate
