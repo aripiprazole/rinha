@@ -28,12 +28,12 @@
   {"git":
    {"url": "https://github.com/algebraic-sofia/melp.git",
     "subDir?": null,
-    "rev": "2a84a574bf8911e569086df3fed0a33c1689d21a",
+    "rev": "583fb56f4a27ba27856e29cdb4070f74415e9ea3",
     "name": "melp",
     "inputRev?": null}},
   {"git":
    {"url": "https://github.com/algebraic-sofia/ash.git",
     "subDir?": null,
-    "rev": "5dfa95a53f57c192d77fb266da550979e3e8d82e",
+    "rev": "2ffd3b885ce042d0897feb9278724b2b2632278b",
     "name": "ash",
     "inputRev?": null}}]}
